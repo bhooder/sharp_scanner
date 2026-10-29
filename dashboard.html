@@ -1,0 +1,802 @@
+<!doctype html>
+<!--
+  Template for dashboard.html. sharp_line_scanner.py fills in the DATA placeholder
+  below with the latest scan and the paper-bet log, then saves it as dashboard.html.
+  Everything (styles, charts, data) lives in this one file, so it works offline.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sharp Line Dashboard</title>
+<style>
+  :root {
+    color-scheme: light;
+    --page: #f9f9f7;
+    --surface-1: #fcfcfb;
+    --text-primary: #0b0b0b;
+    --text-secondary: #52514e;
+    --text-muted: #898781;
+    --grid: #e1e0d9;
+    --axis: #c3c2b7;
+    --border: rgba(11, 11, 11, 0.10);
+    --wash: rgba(11, 11, 11, 0.04);
+    --series-1: #2a78d6;          /* actual / beat the close */
+    --series-2: #eb6834;          /* expected */
+    --diverge-neg: #e34948;       /* didn't beat the close */
+    --good: #0ca30c;
+    --good-text: #006300;
+    --warning: #fab219;
+    --critical: #d03b3b;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --page: #0d0d0d;
+      --surface-1: #1a1a19;
+      --text-primary: #f0efec;
+      --text-secondary: #c3c2b7;
+      --text-muted: #898781;
+      --grid: #2c2c2a;
+      --axis: #383835;
+      --border: rgba(255, 255, 255, 0.10);
+      --wash: rgba(255, 255, 255, 0.05);
+      --series-1: #3987e5;
+      --series-2: #d95926;
+      --diverge-neg: #e66767;
+      --good-text: #0ca30c;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --page: #0d0d0d;
+    --surface-1: #1a1a19;
+    --text-primary: #f0efec;
+    --text-secondary: #c3c2b7;
+    --text-muted: #898781;
+    --grid: #2c2c2a;
+    --axis: #383835;
+    --border: rgba(255, 255, 255, 0.10);
+    --wash: rgba(255, 255, 255, 0.05);
+    --series-1: #3987e5;
+    --series-2: #d95926;
+    --diverge-neg: #e66767;
+    --good-text: #0ca30c;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--page);
+    color: var(--text-primary);
+    font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 24px 16px 48px; }
+  h1 { font-size: 22px; margin: 0; font-weight: 650; }
+  h2 { font-size: 15px; margin: 0 0 2px; font-weight: 600; }
+  .sub { color: var(--text-secondary); margin: 2px 0 0; }
+  .muted { color: var(--text-muted); }
+
+  .tabs { display: flex; gap: 4px; margin: 20px 0 16px; border-bottom: 1px solid var(--grid); }
+  .tabs button {
+    font: inherit; font-weight: 600; background: none; border: 0; cursor: pointer;
+    color: var(--text-secondary); padding: 8px 12px; border-bottom: 2px solid transparent; margin-bottom: -1px;
+  }
+  .tabs button[aria-selected="true"] { color: var(--text-primary); border-bottom-color: var(--text-primary); }
+  .tabs button:hover { background: var(--wash); }
+
+  .card {
+    background: var(--surface-1); border: 1px solid var(--border); border-radius: 10px;
+    padding: 16px; margin-bottom: 16px;
+  }
+  .controls { display: flex; flex-wrap: wrap; gap: 12px; align-items: end; margin-bottom: 16px; }
+  .controls label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--text-secondary); }
+  select, input {
+    font: inherit; color: var(--text-primary); background: var(--surface-1);
+    border: 1px solid var(--border); border-radius: 6px; padding: 6px 8px; min-width: 120px;
+  }
+  .toggle { display: inline-flex; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+  .toggle button {
+    font: inherit; background: var(--surface-1); color: var(--text-secondary); border: 0;
+    padding: 6px 12px; cursor: pointer;
+  }
+  .toggle button[aria-pressed="true"] { background: var(--text-primary); color: var(--surface-1); }
+
+  .notice { display: flex; gap: 10px; align-items: flex-start; padding: 12px 14px; border-radius: 8px;
+            border: 1px solid var(--border); background: var(--surface-1); margin-bottom: 16px; }
+  .notice .icon { font-weight: 700; width: 18px; text-align: center; }
+  .notice.warn .icon { color: var(--warning); }
+  .notice.info .icon { color: var(--series-1); }
+
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 16px; }
+  .tile { background: var(--surface-1); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
+  .tile .label { color: var(--text-secondary); font-size: 12px; }
+  .tile .value { font-size: 24px; font-weight: 600; margin-top: 2px; }
+  .tile .note { color: var(--text-muted); font-size: 12px; margin-top: 2px; }
+  .tile.hero { grid-column: span 2; }
+  .tile.hero .value { font-size: 48px; line-height: 1.1; }
+  @media (max-width: 560px) { .tile.hero { grid-column: 1 / -1; } }
+
+  .table-scroll { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
+  th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--grid); white-space: nowrap; }
+  th { font-size: 12px; color: var(--text-secondary); font-weight: 600; }
+  th.sortable { cursor: pointer; user-select: none; }
+  th.sortable:hover { color: var(--text-primary); }
+  td.num, th.num { text-align: right; }
+  tr:hover td { background: var(--wash); }
+  .pos { color: var(--good-text); }
+  .strong { font-weight: 600; }
+
+  .badge { display: inline-flex; gap: 5px; align-items: center; font-size: 12px; font-weight: 600; }
+  .badge .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+
+  .legend { display: flex; flex-wrap: wrap; gap: 16px; margin: 8px 0 4px; font-size: 12px; color: var(--text-secondary); }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .key-line { width: 16px; height: 2px; border-radius: 1px; display: inline-block; }
+  .key-area { width: 14px; height: 10px; border-radius: 2px; display: inline-block; }
+  .chart { width: 100%; position: relative; }
+  .chart svg { display: block; width: 100%; overflow: visible; }
+  .chart svg:focus { outline: 2px solid var(--series-1); outline-offset: 4px; border-radius: 4px; }
+  .grid-2 { display: grid; grid-template-columns: 3fr 2fr; gap: 16px; margin-bottom: 16px; }
+  .grid-2 > .card { margin-bottom: 0; }
+  .grid-2 > *, .tiles > * { min-width: 0; }   /* let grid cells shrink on small screens */
+  @media (max-width: 860px) { .grid-2 { grid-template-columns: 1fr; } }
+  .row-between { display: flex; justify-content: space-between; align-items: end; gap: 12px; flex-wrap: wrap; }
+
+  #tooltip {
+    position: fixed; pointer-events: none; z-index: 10; background: var(--surface-1);
+    border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; font-size: 12px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12); min-width: 140px;
+  }
+  #tooltip .t-title { color: var(--text-secondary); margin-bottom: 4px; }
+  #tooltip .t-row { display: flex; align-items: center; gap: 8px; }
+  #tooltip .t-row b { font-weight: 650; color: var(--text-primary); }
+  #tooltip .t-row span:last-child { color: var(--text-secondary); }
+  .empty { padding: 32px 16px; text-align: center; color: var(--text-secondary); }
+  footer { color: var(--text-muted); font-size: 12px; margin-top: 24px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Sharp Line Scanner</h1>
+  <p class="sub" id="generated"></p>
+
+  <div class="tabs" role="tablist">
+    <button role="tab" id="tab-btn-bets" aria-controls="tab-bets" aria-selected="true">Bets to take</button>
+    <button role="tab" id="tab-btn-perf" aria-controls="tab-perf" aria-selected="false">Paper performance</button>
+  </div>
+
+  <!-- Tab 1: the latest scan's edges -->
+  <section id="tab-bets" role="tabpanel">
+    <div id="scan-notices"></div>
+    <div class="controls">
+      <label>Bankroll ($)<input id="bankroll" type="number" min="0" step="50" value="1000"></label>
+      <label>Sport<select id="bets-sport"></select></label>
+    </div>
+    <div class="card"><div class="table-scroll" id="bets-table"></div></div>
+  </section>
+
+  <!-- Tab 2: how the paper bets are doing -->
+  <section id="tab-perf" role="tabpanel" hidden>
+    <div class="controls">
+      <label>Logged
+        <select id="f-days">
+          <option value="0">All time</option>
+          <option value="7">Last 7 days</option>
+          <option value="30">Last 30 days</option>
+          <option value="90">Last 90 days</option>
+        </select>
+      </label>
+      <label>Sport<select id="f-sport"></select></label>
+      <label>Market<select id="f-market"></select></label>
+      <label>Book<select id="f-book"></select></label>
+      <label>Stakes
+        <span class="toggle" role="group" aria-label="Stake sizing">
+          <button type="button" data-mode="units" aria-pressed="true">Flat 1 unit</button>
+          <button type="button" data-mode="kelly" aria-pressed="false">Quarter Kelly $</button>
+        </span>
+      </label>
+    </div>
+    <div id="perf-body"></div>
+  </section>
+
+  <footer>Prices move fast. Recheck every price in the sportsbook app before betting. This tool only finds and reports prices.</footer>
+</div>
+<div id="tooltip" role="tooltip" hidden></div>
+
+<script>const DATA = {"generated_at": "2026-10-29T04:07:01.844503+00:00", "default_tab": "bets", "paper_bankroll": 1000.0, "latest_scan": {"scanned_at": "2026-10-29T04:07:01.844337+00:00", "demo": false, "min_ev": 2.0, "edges": []}, "paper_bets": [{"bet_id": "9da35734a02ec2627cd4034086584157|h2h|Denis Shapovalov||", "logged_at": "2026-10-29T03:39+00:00", "sport": "TENNIS", "sport_key": "tennis_atp_swiss_indoors", "event_id": "9da35734a02ec2627cd4034086584157", "game": "Denis Shapovalov @ Taylor Fritz", "starts": "2026-10-29T14:10:00+00:00", "market_key": "h2h", "market": "Moneyline", "outcome": "Denis Shapovalov", "player": "", "point": "", "bet": "Denis Shapovalov to win", "book": "DraftKings", "odds": "221", "decimal_odds": "3.21", "fair_prob": "0.32", "ev_pct": "2.72", "stake_pct": "0.31", "kelly_stake": "3.08", "close_pinnacle_odds": "192", "close_fair_prob": "0.3288", "close_seen_at": "2026-10-29T04:07+00:00", "clv_pct": "5.53", "status": "open", "final_score": "", "flat_profit": "", "kelly_profit": ""}]};</script>
+<script>
+"use strict";
+
+// ---------------------------------------------------------------------------
+// Small helpers
+// ---------------------------------------------------------------------------
+
+const $ = (id) => document.getElementById(id);
+const SVG_NS = "http://www.w3.org/2000/svg";
+
+// Build an element. Text always goes in via textContent (never innerHTML).
+function el(tag, attrs = {}, children = []) {
+  const node = tag.startsWith("svg:") ? document.createElementNS(SVG_NS, tag.slice(4)) : document.createElement(tag);
+  for (const [key, value] of Object.entries(attrs)) {
+    if (value === null || value === undefined || value === false) continue;
+    if (key === "text") node.textContent = value;
+    else if (key === "class") node.setAttribute("class", value);
+    else if (key.startsWith("on")) node.addEventListener(key.slice(2), value);
+    else node.setAttribute(key, value);
+  }
+  for (const child of [].concat(children)) if (child) node.append(child);
+  return node;
+}
+
+const toNum = (v) => (v === "" || v === null || v === undefined ? null : Number(v));
+const sum = (values) => values.reduce((a, b) => a + b, 0);
+const mean = (values) => (values.length ? sum(values) / values.length : null);
+const american = (n) => (n > 0 ? "+" + n : String(n));
+const pct = (x, digits = 1) => (x === null ? "–" : (x > 0 ? "+" : "") + x.toFixed(digits) + "%");
+const units = (x) => (x > 0 ? "+" : "") + x.toFixed(2) + "u";
+const dollars = (x, signed = true) =>
+  (signed && x > 0 ? "+" : x < 0 ? "−" : "") + "$" + Math.abs(x).toLocaleString(undefined, { maximumFractionDigits: 0 });
+
+function storageGet(key) { try { return localStorage.getItem(key); } catch (e) { return null; } }
+function storageSet(key, value) { try { localStorage.setItem(key, value); } catch (e) { /* not available */ } }
+
+function timeUntil(ms) {
+  const minutes = Math.round(ms / 60000);
+  if (minutes < 60) return `in ${minutes}m`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `in ${hours}h ${minutes % 60}m`;
+  return `in ${Math.floor(hours / 24)}d ${hours % 24}h`;
+}
+function timeAgo(ms) {
+  const minutes = Math.round(ms / 60000);
+  if (minutes < 1) return "just now";
+  if (minutes < 60) return `${minutes} min ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 48) return `${hours} h ${minutes % 60} min ago`;
+  return `${Math.floor(hours / 24)} days ago`;
+}
+const localTime = (iso) =>
+  new Date(iso).toLocaleString(undefined, { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+
+function fillSelect(select, values, allLabel) {
+  select.replaceChildren(el("option", { value: "all", text: allLabel }),
+    ...values.map((v) => el("option", { value: v, text: v })));
+}
+const uniqueSorted = (rows, key) => [...new Set(rows.map((r) => r[key]).filter(Boolean))].sort();
+
+// One shared tooltip. rows = [{color, value, label}]
+const tooltip = $("tooltip");
+function showTooltip(event, title, rows) {
+  tooltip.replaceChildren(el("div", { class: "t-title", text: title }),
+    ...rows.map((r) => el("div", { class: "t-row" }, [
+      r.color ? el("span", { class: "key-line", style: `background:${r.color}` }) : null,
+      el("b", { text: r.value }),
+      el("span", { text: r.label }),
+    ])));
+  tooltip.hidden = false;
+  const box = tooltip.getBoundingClientRect();
+  let x = event.clientX + 14, y = event.clientY + 14;
+  if (x + box.width > window.innerWidth - 8) x = event.clientX - box.width - 14;
+  if (y + box.height > window.innerHeight - 8) y = event.clientY - box.height - 14;
+  tooltip.style.left = x + "px";
+  tooltip.style.top = y + "px";
+}
+const hideTooltip = () => { tooltip.hidden = true; };
+
+const css = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+
+// Clean axis ticks: about `count` round numbers covering [lo, hi].
+function niceTicks(lo, hi, count = 5) {
+  if (lo === hi) { lo -= 1; hi += 1; }
+  const raw = (hi - lo) / count;
+  const mag = Math.pow(10, Math.floor(Math.log10(raw)));
+  const step = [1, 2, 2.5, 5, 10].map((m) => m * mag).find((s) => s >= raw);
+  const ticks = [];
+  for (let t = Math.floor(lo / step) * step; t <= hi + step * 0.001; t += step) ticks.push(+t.toFixed(10));
+  if (ticks[ticks.length - 1] < hi) ticks.push(ticks[ticks.length - 1] + step);
+  return ticks;
+}
+
+// A sortable table. columns = [{label, value(row), text(row), num, cls(row)}]
+function sortableTable(container, columns, rows, initialSort) {
+  let sortIndex = initialSort.index, ascending = initialSort.ascending;
+  function render() {
+    const col = columns[sortIndex];
+    const sorted = [...rows].sort((a, b) => {
+      const x = col.value(a), y = col.value(b);
+      if (x === y) return 0;
+      if (x === null) return 1;
+      if (y === null) return -1;
+      return (x < y ? -1 : 1) * (ascending ? 1 : -1);
+    });
+    const head = el("tr", {}, columns.map((c, i) => el("th", {
+      class: "sortable" + (c.num ? " num" : ""),
+      text: c.label + (i === sortIndex ? (ascending ? " ▲" : " ▼") : ""),
+      "aria-sort": i === sortIndex ? (ascending ? "ascending" : "descending") : null,
+      onclick: () => { if (i === sortIndex) ascending = !ascending; else { sortIndex = i; ascending = !!c.num === false; } render(); },
+    })));
+    const body = sorted.map((r) => el("tr", {}, columns.map((c) => {
+      const content = c.cell ? c.cell(r) : c.text(r);
+      return el("td", { class: [c.num ? "num" : "", c.cls ? c.cls(r) : ""].join(" ").trim() || null },
+        typeof content === "string" ? [document.createTextNode(content)] : [content]);
+    })));
+    container.replaceChildren(el("table", {}, [el("thead", {}, head), el("tbody", {}, body)]));
+  }
+  render();
+}
+
+// ---------------------------------------------------------------------------
+// Tabs
+// ---------------------------------------------------------------------------
+
+function selectTab(name) {
+  for (const tab of ["bets", "perf"]) {
+    $("tab-btn-" + tab).setAttribute("aria-selected", String(tab === name));
+    $("tab-" + tab).hidden = tab !== name;
+  }
+  if (name === "perf") renderPerformance();
+}
+$("tab-btn-bets").addEventListener("click", () => selectTab("bets"));
+$("tab-btn-perf").addEventListener("click", () => selectTab("perf"));
+
+$("generated").textContent = "Dashboard built " + localTime(DATA.generated_at) + ".";
+
+// ---------------------------------------------------------------------------
+// Tab 1: Bets to take (the latest scan)
+// ---------------------------------------------------------------------------
+
+const SCAN = DATA.latest_scan;
+
+function renderBets() {
+  const notices = $("scan-notices");
+  notices.replaceChildren();
+  const notice = (kind, icon, title, text) =>
+    notices.append(el("div", { class: "notice " + kind }, [
+      el("span", { class: "icon", text: icon, "aria-hidden": "true" }),
+      el("div", {}, [el("div", { class: "strong", text: title }), el("div", { class: "muted", text })]),
+    ]));
+
+  if (!SCAN) {
+    $("bets-table").replaceChildren(el("div", { class: "empty", text: "No scan yet. Run python3 sharp_line_scanner.py to find bets." }));
+    return;
+  }
+
+  const age = Date.now() - Date.parse(SCAN.scanned_at);
+  if (SCAN.demo) notice("info", "i", "Demo data", "These bets come from made-up demo odds, not real prices.");
+  if (age > 15 * 60000) {
+    notice("warn", "!", "Prices may have moved", `This scan ran ${timeAgo(age)}. Run a new scan before betting.`);
+  } else {
+    notice("info", "i", `Scanned ${timeAgo(age)}`, "Recheck each price in the sportsbook app before betting.");
+  }
+
+  const bankroll = Math.max(0, Number($("bankroll").value) || 0);
+  const sport = $("bets-sport").value;
+  const now = Date.now();
+  const all = SCAN.edges.filter((e) => sport === "all" || e.sport === sport);
+  const upcoming = all.filter((e) => Date.parse(e.starts) > now);
+
+  if (!upcoming.length) {
+    const why = all.length ? "Every game from the last scan has already started." : `The last scan found no bets at or above ${SCAN.min_ev}% EV.`;
+    $("bets-table").replaceChildren(el("div", { class: "empty", text: why }));
+    return;
+  }
+
+  // One row per bet: the book with the best EV, with any other books listed beside it.
+  const groups = new Map();
+  for (const e of upcoming) {
+    const key = e.bet_id || `${e.game}|${e.market}|${e.bet}`;
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(e);
+  }
+  const rows = [...groups.values()].map((list) => {
+    list.sort((a, b) => b.ev_pct - a.ev_pct);
+    return { ...list[0], others: list.slice(1) };
+  });
+
+  sortableTable($("bets-table"), [
+    { label: "EV", num: true, value: (e) => e.ev_pct, text: (e) => pct(e.ev_pct), cls: () => "strong" },
+    { label: "Stake", num: true, value: (e) => e.stake_pct,
+      text: (e) => `${e.stake_pct.toFixed(1)}%` + (bankroll ? `  ${dollars(bankroll * e.stake_pct / 100, false)}` : "") },
+    { label: "Bet", value: (e) => e.bet, text: (e) => e.bet, cls: () => "strong" },
+    { label: "Book", value: (e) => e.book, text: (e) => e.book },
+    { label: "Also at", value: (e) => e.others.length || null,
+      text: (e) => e.others.map((o) => `${o.book} ${american(o.odds)} (${pct(o.ev_pct)})`).join(", ") || "–", cls: () => "muted" },
+    { label: "Odds", num: true, value: (e) => e.decimal_odds, text: (e) => american(e.odds) },
+    { label: "Fair", num: true, value: (e) => e.fair_odds, text: (e) => american(e.fair_odds) },
+    { label: "Pinnacle", num: true, value: (e) => e.pinnacle_odds, text: (e) => american(e.pinnacle_odds) },
+    { label: "Sport", value: (e) => e.sport, text: (e) => e.sport },
+    { label: "Market", value: (e) => e.market, text: (e) => e.market },
+    { label: "Game", value: (e) => e.game, text: (e) => e.game },
+    { label: "Starts", value: (e) => e.starts, text: (e) => `${localTime(e.starts)} (${timeUntil(Date.parse(e.starts) - now)})` },
+  ], rows, { index: 0, ascending: false });
+
+  if (upcoming.length < all.length) {
+    $("bets-table").append(el("p", { class: "muted", text: `${all.length - upcoming.length} bet(s) hidden because the game already started.` }));
+  }
+}
+
+if (SCAN) fillSelect($("bets-sport"), uniqueSorted(SCAN.edges, "sport"), "All sports");
+else fillSelect($("bets-sport"), [], "All sports");
+$("bankroll").value = storageGet("sls-bankroll") || DATA.paper_bankroll;
+$("bankroll").addEventListener("input", () => { storageSet("sls-bankroll", $("bankroll").value); renderBets(); });
+$("bets-sport").addEventListener("change", renderBets);
+
+// ---------------------------------------------------------------------------
+// Tab 2: Paper performance
+// ---------------------------------------------------------------------------
+
+const PAPER = DATA.paper_bets.map((r) => {
+  const logged = Date.parse(r.logged_at);
+  const closeSeen = r.close_seen_at ? Date.parse(r.close_seen_at) : null;
+  return {
+    ...r,
+    odds: toNum(r.odds), decimal_odds: toNum(r.decimal_odds), fair_prob: toNum(r.fair_prob),
+    ev_pct: toNum(r.ev_pct), kelly_stake: toNum(r.kelly_stake) || 0,
+    clv_pct: toNum(r.clv_pct), flat_profit: toNum(r.flat_profit), kelly_profit: toNum(r.kelly_profit),
+    close_pinnacle_odds: toNum(r.close_pinnacle_odds),
+    logged, startsMs: Date.parse(r.starts),
+    // CLV only counts when the close was seen after the bet was logged.
+    hasClose: toNum(r.clv_pct) !== null && closeSeen !== null && closeSeen > logged,
+    hoursAhead: (Date.parse(r.starts) - logged) / 3600000,
+  };
+});
+const SETTLED = new Set(["won", "lost", "push"]);
+
+const state = { days: 0, sport: "all", market: "all", book: "all", mode: storageGet("sls-mode") || "units", groupBy: "sport" };
+
+fillSelect($("f-sport"), uniqueSorted(PAPER, "sport"), "All sports");
+fillSelect($("f-market"), uniqueSorted(PAPER, "market"), "All markets");
+fillSelect($("f-book"), uniqueSorted(PAPER, "book"), "All books");
+for (const [id, key] of [["f-days", "days"], ["f-sport", "sport"], ["f-market", "market"], ["f-book", "book"]]) {
+  $(id).addEventListener("change", () => { state[key] = key === "days" ? Number($(id).value) : $(id).value; renderPerformance(); });
+}
+document.querySelectorAll(".toggle button").forEach((button) => {
+  button.addEventListener("click", () => { state.mode = button.dataset.mode; storageSet("sls-mode", state.mode); renderPerformance(); });
+});
+
+function filteredRows() {
+  const now = Date.now();
+  return PAPER.filter((r) =>
+    (state.days === 0 || now - r.logged <= state.days * 86400000) &&
+    (state.sport === "all" || r.sport === state.sport) &&
+    (state.market === "all" || r.market === state.market) &&
+    (state.book === "all" || r.book === state.book));
+}
+
+// All the numbers for one slice of bets, in units or Kelly dollars.
+function computeStats(rows, mode) {
+  const stake = (r) => (mode === "units" ? 1 : r.kelly_stake);
+  const settled = rows.filter((r) => SETTLED.has(r.status));
+  const graded = settled.filter((r) => r.status !== "push").sort((a, b) => a.startsMs - b.startsMs);
+  const closes = rows.filter((r) => r.hasClose);
+  const profitOf = (r) => (mode === "units" ? r.flat_profit : r.kelly_profit) || 0;
+
+  // Running totals for the chart. A bet of size s at decimal odds d with win
+  // chance p has expected profit s(pd - 1) and variance s^2 p(1-p) d^2.
+  let actual = 0, expected = 0, variance = 0;
+  const path = graded.map((r, i) => {
+    const s = stake(r), p = r.fair_prob, d = r.decimal_odds;
+    actual += profitOf(r);
+    expected += s * (p * d - 1);
+    variance += s * s * p * (1 - p) * d * d;
+    return { n: i + 1, row: r, actual, expected, sd: Math.sqrt(variance) };
+  });
+  const staked = sum(graded.map(stake));
+  const last = path[path.length - 1];
+
+  return {
+    rows, settled, graded, closes, path, staked,
+    wins: settled.filter((r) => r.status === "won").length,
+    losses: settled.filter((r) => r.status === "lost").length,
+    pushes: settled.filter((r) => r.status === "push").length,
+    open: rows.filter((r) => r.status === "open").length,
+    profit: sum(settled.map(profitOf)),
+    expected: last ? last.expected : 0,
+    sd: last ? last.sd : 0,
+    avgEv: mean(rows.map((r) => r.ev_pct)),
+    avgClv: mean(closes.map((r) => r.clv_pct)),
+    beatClose: closes.length ? closes.filter((r) => r.clv_pct > 0).length / closes.length : null,
+  };
+}
+
+function renderPerformance() {
+  document.querySelectorAll(".toggle button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.mode === state.mode)));
+  const body = $("perf-body");
+  if (!PAPER.length) {
+    body.replaceChildren(el("div", { class: "card empty", text: "No paper bets yet. Every real scan logs the bets it finds automatically." }));
+    return;
+  }
+  const rows = filteredRows();
+  if (!rows.length) {
+    body.replaceChildren(el("div", { class: "card empty", text: "No paper bets match these filters." }));
+    return;
+  }
+  const s = computeStats(rows, state.mode);
+  const money = (x) => (state.mode === "units" ? units(x) : dollars(x));
+
+  // --- Stat tiles ---------------------------------------------------------
+  const tile = (label, value, note, hero = false, cls = "") =>
+    el("div", { class: "tile" + (hero ? " hero" : "") }, [
+      el("div", { class: "label", text: label }),
+      el("div", { class: "value " + cls, text: value }),
+      note ? el("div", { class: "note", text: note }) : null,
+    ]);
+  const z = s.sd > 0 ? (s.profit - s.expected) / s.sd : null;
+  const zNote = z === null ? "Needs settled bets" : Math.abs(z) <= 2 ? "Within normal luck (±2)" : z > 2 ? "Running well above expectation" : "Well below expectation: edges may not be real";
+  const roi = s.staked ? s.profit / s.staked * 100 : null;
+
+  const tiles = el("div", { class: "tiles" }, [
+    tile("Average closing line value", s.avgClv === null ? "–" : pct(s.avgClv, 2),
+      s.closes.length ? `${s.closes.length} bets with a later closing price · beat the close on ${Math.round(s.beatClose * 100)}%` : "No closing prices recorded after logging yet",
+      true, s.avgClv > 0 ? "pos" : ""),
+    tile("Bets", String(rows.length), `${s.settled.length} settled · ${s.open} open · avg EV ${pct(s.avgEv, 2)}`),
+    tile("Record", `${s.wins}-${s.losses}-${s.pushes}`, "Won-lost-push"),
+    tile("Profit", s.graded.length ? money(s.profit) : "–",
+      s.graded.length ? `ROI ${pct(roi)} · expected ${money(s.expected)}` : "Nothing settled yet", false, s.profit > 0 ? "pos" : ""),
+    tile("Luck check", z === null ? "–" : (z > 0 ? "+" : "") + z.toFixed(1) + " SD", zNote),
+  ]);
+
+  const sampleNote = s.closes.length < 50
+    ? el("div", { class: "notice info" }, [
+        el("span", { class: "icon", text: "i", "aria-hidden": "true" }),
+        el("div", { class: "muted", text: `Small sample: CLV starts to mean something after about 50 bets (you have ${s.closes.length}). Win/loss needs several hundred.` }),
+      ])
+    : null;
+
+  // --- Charts -------------------------------------------------------------
+  const profitCard = el("div", { class: "card" }, [
+    el("h2", { text: "Cumulative profit vs expected" }),
+    el("div", { class: "sub", text: `Settled bets in game order, ${state.mode === "units" ? "flat 1 unit each" : "quarter-Kelly dollar stakes"}. The band is ±2 standard deviations of luck around expected.` }),
+    el("div", { class: "legend" }, [
+      el("span", {}, [el("span", { class: "key-line", style: "background:var(--series-1)" }), "Actual"]),
+      el("span", {}, [el("span", { class: "key-line", style: "background:var(--series-2)" }), "Expected from EV"]),
+      el("span", {}, [el("span", { class: "key-area", style: "background:var(--series-2);opacity:.18" }), "±2 SD luck band"]),
+    ]),
+    el("div", { class: "chart", id: "profit-chart" }),
+  ]);
+  const clvCard = el("div", { class: "card" }, [
+    el("h2", { text: "Closing line value per bet" }),
+    el("div", { class: "sub", text: "How many bets landed at each CLV. Right of zero (blue) beat the close; left of zero (red) didn't." }),
+    el("div", { class: "chart", id: "clv-chart" }),
+  ]);
+
+  // --- Breakdown table ----------------------------------------------------
+  const groupSelect = el("select", { id: "group-by", "aria-label": "Break down by" },
+    [["sport", "Sport"], ["book", "Book"], ["market", "Market"], ["timing", "Time before start"]]
+      .map(([v, t]) => el("option", { value: v, text: t, selected: v === state.groupBy ? "selected" : null })));
+  groupSelect.addEventListener("change", () => { state.groupBy = groupSelect.value; renderPerformance(); });
+  const breakdownCard = el("div", { class: "card" }, [
+    el("div", { class: "row-between" }, [
+      el("div", {}, [el("h2", { text: "Breakdown" }),
+        el("div", { class: "sub", text: "\"Time before start\" shows whether bets found early or late hold up better." })]),
+      el("label", { class: "muted" }, ["Break down by ", groupSelect]),
+    ]),
+    el("div", { class: "table-scroll", id: "breakdown" }),
+  ]);
+
+  const betsCard = el("div", { class: "card" }, [
+    el("h2", { text: "All paper bets" }),
+    el("div", { class: "sub", text: "Click a column to sort." }),
+    el("div", { class: "table-scroll", id: "paper-table" }),
+  ]);
+
+  body.replaceChildren(sampleNote || "", tiles,
+    el("div", { class: "grid-2" }, [profitCard, clvCard]), breakdownCard, betsCard);
+
+  drawProfitChart($("profit-chart"), s, money);
+  drawClvChart($("clv-chart"), s.closes);
+  renderBreakdown($("breakdown"), rows, money);
+  renderPaperTable($("paper-table"), rows, money);
+}
+
+// Cumulative actual vs expected profit, with a ±2 SD band. One y-axis.
+function drawProfitChart(container, s, money) {
+  if (s.path.length < 2) {
+    container.replaceChildren(el("div", { class: "empty", text: "This chart appears once at least 2 bets are settled." }));
+    return;
+  }
+  const W = Math.max(280, container.clientWidth), H = 260;
+  const m = { l: 52, r: 16, t: 12, b: 30 };
+  const pts = [{ n: 0, actual: 0, expected: 0, sd: 0 }, ...s.path];
+  const lo = Math.min(0, ...pts.map((p) => Math.min(p.actual, p.expected - 2 * p.sd)));
+  const hi = Math.max(0, ...pts.map((p) => Math.max(p.actual, p.expected + 2 * p.sd)));
+  const ticks = niceTicks(lo, hi, 5);
+  const yMin = ticks[0], yMax = ticks[ticks.length - 1], nMax = pts[pts.length - 1].n;
+  const x = (n) => m.l + (n / nMax) * (W - m.l - m.r);
+  const y = (v) => m.t + (1 - (v - yMin) / (yMax - yMin)) * (H - m.t - m.b);
+  const line = (key) => pts.map((p, i) => `${i ? "L" : "M"}${x(p.n).toFixed(1)},${y(p[key]).toFixed(1)}`).join("");
+  const band = pts.map((p, i) => `${i ? "L" : "M"}${x(p.n).toFixed(1)},${y(p.expected + 2 * p.sd).toFixed(1)}`).join("") +
+    [...pts].reverse().map((p) => `L${x(p.n).toFixed(1)},${y(p.expected - 2 * p.sd).toFixed(1)}`).join("") + "Z";
+
+  const svg = el("svg:svg", { viewBox: `0 0 ${W} ${H}`, height: H, tabindex: "0", role: "img",
+    "aria-label": `Cumulative profit ${money(s.profit)} against expected ${money(s.expected)} over ${s.path.length} settled bets` });
+  for (const t of ticks) {
+    svg.append(el("svg:line", { x1: m.l, x2: W - m.r, y1: y(t), y2: y(t), stroke: t === 0 ? css("--axis") : css("--grid"), "stroke-width": 1 }));
+    svg.append(el("svg:text", { x: m.l - 8, y: y(t) + 4, "text-anchor": "end", "font-size": 11, fill: css("--text-muted"), text: money(t).replace(".00", "") }));
+  }
+  svg.append(el("svg:text", { x: m.l, y: H - 8, "font-size": 11, fill: css("--text-muted"), text: "Bet 1" }));
+  svg.append(el("svg:text", { x: W - m.r, y: H - 8, "text-anchor": "end", "font-size": 11, fill: css("--text-muted"), text: `Bet ${nMax}` }));
+  svg.append(el("svg:path", { d: band, fill: css("--series-2"), opacity: 0.12 }));
+  svg.append(el("svg:path", { d: line("expected"), fill: "none", stroke: css("--series-2"), "stroke-width": 2, "stroke-linejoin": "round", "stroke-linecap": "round" }));
+  svg.append(el("svg:path", { d: line("actual"), fill: "none", stroke: css("--series-1"), "stroke-width": 2, "stroke-linejoin": "round", "stroke-linecap": "round" }));
+  const end = pts[pts.length - 1];
+  for (const [key, color] of [["expected", "--series-2"], ["actual", "--series-1"]]) {
+    svg.append(el("svg:circle", { cx: x(end.n), cy: y(end[key]), r: 4, fill: css(color), stroke: css("--surface-1"), "stroke-width": 2 }));
+  }
+
+  // Crosshair + tooltip: snaps to the nearest bet. Arrow keys work too.
+  const cross = el("svg:line", { y1: m.t, y2: H - m.b, stroke: css("--axis"), "stroke-width": 1, visibility: "hidden" });
+  const dotA = el("svg:circle", { r: 4, fill: css("--series-1"), stroke: css("--surface-1"), "stroke-width": 2, visibility: "hidden" });
+  const dotE = el("svg:circle", { r: 4, fill: css("--series-2"), stroke: css("--surface-1"), "stroke-width": 2, visibility: "hidden" });
+  svg.append(cross, dotE, dotA);
+  let index = pts.length - 1;
+  function show(i, event) {
+    index = Math.max(1, Math.min(pts.length - 1, i));
+    const p = pts[index];
+    for (const node of [cross, dotA, dotE]) node.setAttribute("visibility", "visible");
+    cross.setAttribute("x1", x(p.n)); cross.setAttribute("x2", x(p.n));
+    dotA.setAttribute("cx", x(p.n)); dotA.setAttribute("cy", y(p.actual));
+    dotE.setAttribute("cx", x(p.n)); dotE.setAttribute("cy", y(p.expected));
+    const box = svg.getBoundingClientRect();
+    const ev = event || { clientX: box.left + (x(p.n) / W) * box.width, clientY: box.top + (y(p.actual) / H) * box.height };
+    showTooltip(ev, `Bet ${p.n}: ${p.row.bet} (${p.row.status})`, [
+      { color: css("--series-1"), value: money(p.actual), label: "Actual" },
+      { color: css("--series-2"), value: money(p.expected), label: "Expected" },
+      { value: `${money(p.expected - 2 * p.sd)} to ${money(p.expected + 2 * p.sd)}`, label: "±2 SD" },
+    ]);
+  }
+  const hit = el("svg:rect", { x: m.l, y: m.t, width: W - m.l - m.r, height: H - m.t - m.b, fill: "transparent" });
+  hit.addEventListener("pointermove", (event) => {
+    const box = svg.getBoundingClientRect();
+    const px = (event.clientX - box.left) * (W / box.width);
+    show(Math.round(((px - m.l) / (W - m.l - m.r)) * nMax), event);
+  });
+  const hide = () => { hideTooltip(); for (const node of [cross, dotA, dotE]) node.setAttribute("visibility", "hidden"); };
+  hit.addEventListener("pointerleave", hide);
+  svg.addEventListener("blur", hide);
+  svg.addEventListener("focus", () => show(index));
+  svg.addEventListener("keydown", (event) => {
+    if (event.key === "ArrowLeft") { show(index - 1); event.preventDefault(); }
+    if (event.key === "ArrowRight") { show(index + 1); event.preventDefault(); }
+  });
+  svg.append(hit);
+  container.replaceChildren(svg);
+}
+
+// Histogram of CLV in 1-point bins. Color = sign (diverging blue/red).
+function drawClvChart(container, closes) {
+  if (!closes.length) {
+    container.replaceChildren(el("div", { class: "empty", text: "No closing prices recorded after logging yet." }));
+    return;
+  }
+  const values = closes.map((r) => r.clv_pct);
+  const lo = Math.max(-10, Math.floor(Math.min(...values))), hi = Math.min(15, Math.ceil(Math.max(...values)) || 1);
+  const bins = [];
+  for (let b = lo; b < Math.max(hi, lo + 1); b++) bins.push({ from: b, to: b + 1, count: 0 });
+  for (const v of values) {
+    const i = Math.max(0, Math.min(bins.length - 1, Math.floor(v) - lo));
+    bins[i].count++;
+  }
+  const W = Math.max(260, container.clientWidth), H = 260;
+  const m = { l: 32, r: 12, t: 26, b: 30 };
+  const ticks = niceTicks(0, Math.max(...bins.map((b) => b.count)), 4).filter((t) => Number.isInteger(t));
+  const yMax = ticks[ticks.length - 1];
+  const slot = (W - m.l - m.r) / bins.length;
+  const barW = Math.min(24, slot - 2);
+  const xOf = (v) => m.l + ((v - lo) / bins.length) * (W - m.l - m.r);
+  const y = (v) => m.t + (1 - v / yMax) * (H - m.t - m.b);
+  const base = y(0);
+
+  const svg = el("svg:svg", { viewBox: `0 0 ${W} ${H}`, height: H, role: "img",
+    "aria-label": `Histogram of closing line value for ${values.length} bets, average ${pct(mean(values), 2)}` });
+  for (const t of ticks) {
+    svg.append(el("svg:line", { x1: m.l, x2: W - m.r, y1: y(t), y2: y(t), stroke: t === 0 ? css("--axis") : css("--grid"), "stroke-width": 1 }));
+    svg.append(el("svg:text", { x: m.l - 6, y: y(t) + 4, "text-anchor": "end", "font-size": 11, fill: css("--text-muted"), text: String(t) }));
+  }
+  const labelEvery = Math.ceil(bins.length / 8);
+  bins.forEach((b, i) => {
+    if (b.from % labelEvery === 0 || b.from === 0) {
+      svg.append(el("svg:text", { x: xOf(b.from), y: H - 10, "text-anchor": "middle", "font-size": 11, fill: css("--text-muted"), text: (b.from > 0 ? "+" : "") + b.from + "%" }));
+    }
+    const cx = m.l + slot * (i + 0.5);
+    const color = b.from >= 0 ? css("--series-1") : css("--diverge-neg");
+    if (b.count) {
+      const top = y(b.count), h = base - top, r = Math.min(4, h, barW / 2), left = cx - barW / 2;
+      // Rounded data-end on top, square at the baseline.
+      const d = `M${left},${base}V${top + r}Q${left},${top} ${left + r},${top}H${left + barW - r}Q${left + barW},${top} ${left + barW},${top + r}V${base}Z`;
+      svg.append(el("svg:path", { d, fill: color }));
+    }
+    const hit = el("svg:rect", { x: m.l + slot * i, y: m.t, width: slot, height: H - m.t - m.b, fill: "transparent", tabindex: "0" });
+    const label = `CLV ${pct(b.from, 0)} to ${pct(b.to, 0)}`;
+    const tip = (event) => showTooltip(event, label, [{ color, value: String(b.count), label: b.count === 1 ? "bet" : "bets" }]);
+    hit.addEventListener("pointermove", tip);
+    hit.addEventListener("pointerleave", hideTooltip);
+    hit.addEventListener("focus", () => { const r = hit.getBoundingClientRect(); tip({ clientX: r.left + r.width / 2, clientY: r.top + r.height / 2 }); });
+    hit.addEventListener("blur", hideTooltip);
+    svg.append(hit);
+  });
+  // Zero line and the average marker.
+  svg.append(el("svg:line", { x1: xOf(0), x2: xOf(0), y1: m.t, y2: base, stroke: css("--axis"), "stroke-width": 1 }));
+  const avg = mean(values), ax = xOf(Math.max(lo, Math.min(lo + bins.length, avg)));
+  svg.append(el("svg:line", { x1: ax, x2: ax, y1: m.t - 6, y2: base, stroke: css("--text-secondary"), "stroke-width": 1 }));
+  svg.append(el("svg:text", { x: ax, y: m.t - 12, "text-anchor": "middle", "font-size": 11, fill: css("--text-secondary"), text: `Avg ${pct(avg, 1)}` }));
+  container.replaceChildren(svg);
+}
+
+function timingBucket(hours) {
+  if (hours < 1) return "Under 1 h";
+  if (hours < 3) return "1–3 h";
+  if (hours < 6) return "3–6 h";
+  if (hours < 24) return "6–24 h";
+  return "24 h +";
+}
+const TIMING_ORDER = ["Under 1 h", "1–3 h", "3–6 h", "6–24 h", "24 h +"];
+
+function renderBreakdown(container, rows, money) {
+  const keyOf = state.groupBy === "timing" ? (r) => timingBucket(r.hoursAhead) : (r) => r[state.groupBy];
+  const groups = new Map();
+  for (const r of rows) {
+    const key = keyOf(r);
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(r);
+  }
+  const data = [...groups].map(([key, groupRows]) => ({ key, ...computeStats(groupRows, state.mode) }));
+  if (state.groupBy === "timing") data.sort((a, b) => TIMING_ORDER.indexOf(a.key) - TIMING_ORDER.indexOf(b.key));
+  sortableTable(container, [
+    { label: { sport: "Sport", book: "Book", market: "Market", timing: "Time before start" }[state.groupBy],
+      value: (g) => state.groupBy === "timing" ? TIMING_ORDER.indexOf(g.key) : g.key, text: (g) => g.key, cls: () => "strong" },
+    { label: "Bets", num: true, value: (g) => g.rows.length, text: (g) => String(g.rows.length) },
+    { label: "Avg EV", num: true, value: (g) => g.avgEv, text: (g) => pct(g.avgEv, 2) },
+    { label: "Avg CLV", num: true, value: (g) => g.avgClv, text: (g) => g.avgClv === null ? "–" : `${pct(g.avgClv, 2)} (${g.closes.length})`, cls: (g) => g.avgClv > 0 ? "pos" : "" },
+    { label: "Beat close", num: true, value: (g) => g.beatClose, text: (g) => g.beatClose === null ? "–" : Math.round(g.beatClose * 100) + "%" },
+    { label: "Record", num: true, value: (g) => g.wins - g.losses, text: (g) => `${g.wins}-${g.losses}-${g.pushes}` },
+    { label: "Profit", num: true, value: (g) => g.profit, text: (g) => g.graded.length ? money(g.profit) : "–", cls: (g) => g.profit > 0 ? "pos" : "" },
+    { label: "ROI", num: true, value: (g) => g.staked ? g.profit / g.staked : null, text: (g) => g.staked ? pct(g.profit / g.staked * 100) : "–" },
+  ], data, { index: state.groupBy === "timing" ? 0 : 1, ascending: state.groupBy === "timing" });
+}
+
+const STATUS = {
+  won: { icon: "✓", label: "Won", color: "var(--good)" },
+  lost: { icon: "✕", label: "Lost", color: "var(--critical)" },
+  push: { icon: "–", label: "Push", color: "var(--text-muted)" },
+  open: { icon: "○", label: "Open", color: "var(--axis)" },
+};
+function statusBadge(status) {
+  const s = STATUS[status] || { icon: "·", label: status, color: "var(--text-muted)" };
+  return el("span", { class: "badge" }, [
+    el("span", { class: "dot", style: `background:${s.color}`, "aria-hidden": "true" }),
+    el("span", { text: `${s.icon} ${s.label}` }),
+  ]);
+}
+
+function renderPaperTable(container, rows, money) {
+  const profitOf = (r) => (state.mode === "units" ? r.flat_profit : r.kelly_profit);
+  sortableTable(container, [
+    { label: "Logged", value: (r) => r.logged, text: (r) => localTime(r.logged_at) },
+    { label: "Bet", value: (r) => r.bet, text: (r) => r.bet, cls: () => "strong" },
+    { label: "Game", value: (r) => r.game, text: (r) => r.game },
+    { label: "Sport", value: (r) => r.sport, text: (r) => r.sport },
+    { label: "Book", value: (r) => r.book, text: (r) => r.book },
+    { label: "Odds", num: true, value: (r) => r.decimal_odds, text: (r) => american(r.odds) },
+    { label: "EV", num: true, value: (r) => r.ev_pct, text: (r) => pct(r.ev_pct) },
+    { label: "Close", num: true, value: (r) => r.hasClose ? r.close_pinnacle_odds : null, text: (r) => r.hasClose ? american(r.close_pinnacle_odds) : "–" },
+    { label: "CLV", num: true, value: (r) => r.hasClose ? r.clv_pct : null, text: (r) => r.hasClose ? pct(r.clv_pct) : "–", cls: (r) => r.hasClose && r.clv_pct > 0 ? "pos" : "" },
+    { label: "Result", value: (r) => r.status, cell: (r) => statusBadge(r.status) },
+    { label: "Profit", num: true, value: profitOf, text: (r) => profitOf(r) === null ? "–" : money(profitOf(r)) },
+  ], rows, { index: 0, ascending: false });
+}
+
+// Redraw charts at the new width when the window is resized.
+let resizeTimer;
+window.addEventListener("resize", () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => { if (!$("tab-perf").hidden) renderPerformance(); }, 150);
+});
+
+renderBets();
+selectTab(DATA.default_tab || "bets");
+</script>
+</body>
+</html>

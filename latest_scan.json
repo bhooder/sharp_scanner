@@ -1,39 +1,6 @@
 {
- "scanned_at": "2026-10-29T03:39:16.586779+00:00",
+ "scanned_at": "2026-10-29T04:07:01.844337+00:00",
  "demo": false,
  "min_ev": 2.0,
- "edges": [
-  {
-   "bet_id": "9da35734a02ec2627cd4034086584157|h2h|Denis Shapovalov||",
-   "ev_pct": 2.7205964325529797,
-   "stake_pct": 0.3077597774381199,
-   "sport": "TENNIS",
-   "game": "Denis Shapovalov @ Taylor Fritz",
-   "market": "Moneyline",
-   "bet": "Denis Shapovalov to win",
-   "book": "DraftKings",
-   "odds": 221,
-   "fair_odds": 212,
-   "pinnacle_odds": 199,
-   "decimal_odds": 3.21,
-   "fair_prob": 0.3200018580453364,
-   "starts": "2026-10-29T14:10:00+00:00"
-  },
-  {
-   "bet_id": "9da35734a02ec2627cd4034086584157|h2h|Denis Shapovalov||",
-   "ev_pct": 2.400594574507653,
-   "stake_pct": 0.27279483801223325,
-   "sport": "TENNIS",
-   "game": "Denis Shapovalov @ Taylor Fritz",
-   "market": "Moneyline",
-   "bet": "Denis Shapovalov to win",
-   "book": "BetRivers",
-   "odds": 220,
-   "fair_odds": 212,
-   "pinnacle_odds": 199,
-   "decimal_odds": 3.2,
-   "fair_prob": 0.3200018580453364,
-   "starts": "2026-10-29T14:10:00+00:00"
-  }
- ]
+ "edges": []
 }
