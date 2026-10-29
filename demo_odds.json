@@ -1,0 +1,263 @@
+{
+  "_note": "Made-up odds in The Odds API's response shape, used by --demo. Not real prices.",
+  "demo_now": "2026-10-27T18:00:00Z",
+  "game_odds": {
+    "americanfootball_nfl": [
+      {
+        "id": "demo-nfl-1",
+        "sport_key": "americanfootball_nfl",
+        "commence_time": "2026-10-30T00:15:00Z",
+        "home_team": "Kansas City Chiefs",
+        "away_team": "Buffalo Bills",
+        "bookmakers": [
+          {
+            "key": "pinnacle", "title": "Pinnacle", "last_update": "2026-10-27T17:50:00Z",
+            "markets": [
+              {"key": "h2h", "last_update": "2026-10-27T17:50:00Z", "outcomes": [
+                {"name": "Kansas City Chiefs", "price": 1.80},
+                {"name": "Buffalo Bills", "price": 2.10}]},
+              {"key": "spreads", "last_update": "2026-10-27T17:50:00Z", "outcomes": [
+                {"name": "Kansas City Chiefs", "price": 1.95, "point": -2.5},
+                {"name": "Buffalo Bills", "price": 1.93, "point": 2.5}]},
+              {"key": "totals", "last_update": "2026-10-27T17:50:00Z", "outcomes": [
+                {"name": "Over", "price": 1.8333, "point": 47.5},
+                {"name": "Under", "price": 2.00, "point": 47.5}]}
+            ]
+          },
+          {
+            "key": "draftkings", "title": "DraftKings", "last_update": "2026-10-27T17:53:00Z",
+            "markets": [
+              {"key": "h2h", "last_update": "2026-10-27T17:53:00Z", "outcomes": [
+                {"name": "Kansas City Chiefs", "price": 1.71},
+                {"name": "Buffalo Bills", "price": 2.20}]},
+              {"key": "spreads", "last_update": "2026-10-27T17:53:00Z", "outcomes": [
+                {"name": "Kansas City Chiefs", "price": 1.91, "point": -2.5},
+                {"name": "Buffalo Bills", "price": 1.91, "point": 2.5}]},
+              {"key": "totals", "last_update": "2026-10-27T17:53:00Z", "outcomes": [
+                {"name": "Over", "price": 2.05, "point": 47.5},
+                {"name": "Under", "price": 1.80, "point": 47.5}]}
+            ]
+          },
+          {
+            "key": "fanduel", "title": "FanDuel", "last_update": "2026-10-27T17:52:00Z",
+            "markets": [
+              {"key": "h2h", "last_update": "2026-10-27T17:52:00Z", "outcomes": [
+                {"name": "Kansas City Chiefs", "price": 1.67},
+                {"name": "Buffalo Bills", "price": 2.25}]},
+              {"key": "spreads", "last_update": "2026-10-27T17:52:00Z", "outcomes": [
+                {"name": "Kansas City Chiefs", "price": 2.05, "point": -3.0},
+                {"name": "Buffalo Bills", "price": 1.78, "point": 3.0}]}
+            ]
+          },
+          {
+            "key": "betmgm", "title": "BetMGM", "last_update": "2026-10-27T17:59:00Z",
+            "markets": [
+              {"key": "totals", "last_update": "2026-10-27T17:59:00Z", "outcomes": [
+                {"name": "Over", "price": 1.74, "point": 47.5},
+                {"name": "Under", "price": 2.15, "point": 47.5}]}
+            ]
+          }
+        ]
+      },
+      {
+        "id": "demo-nfl-2",
+        "sport_key": "americanfootball_nfl",
+        "commence_time": "2026-10-27T17:00:00Z",
+        "home_team": "Dallas Cowboys",
+        "away_team": "Philadelphia Eagles",
+        "bookmakers": [
+          {
+            "key": "pinnacle", "title": "Pinnacle", "last_update": "2026-10-27T17:58:00Z",
+            "markets": [
+              {"key": "h2h", "last_update": "2026-10-27T17:58:00Z", "outcomes": [
+                {"name": "Dallas Cowboys", "price": 2.50},
+                {"name": "Philadelphia Eagles", "price": 1.57}]}
+            ]
+          },
+          {
+            "key": "draftkings", "title": "DraftKings", "last_update": "2026-10-27T17:58:00Z",
+            "markets": [
+              {"key": "h2h", "last_update": "2026-10-27T17:58:00Z", "outcomes": [
+                {"name": "Dallas Cowboys", "price": 3.00},
+                {"name": "Philadelphia Eagles", "price": 1.40}]}
+            ]
+          }
+        ]
+      }
+    ],
+    "americanfootball_ncaaf": [
+      {
+        "id": "demo-cfb-1",
+        "sport_key": "americanfootball_ncaaf",
+        "commence_time": "2026-10-31T16:00:00Z",
+        "home_team": "Ohio State Buckeyes",
+        "away_team": "Penn State Nittany Lions",
+        "bookmakers": [
+          {
+            "key": "pinnacle", "title": "Pinnacle", "last_update": "2026-10-27T17:55:00Z",
+            "markets": [
+              {"key": "h2h", "last_update": "2026-10-27T17:55:00Z", "outcomes": [
+                {"name": "Ohio State Buckeyes", "price": 1.50},
+                {"name": "Penn State Nittany Lions", "price": 2.75}]},
+              {"key": "spreads", "last_update": "2026-10-27T17:55:00Z", "outcomes": [
+                {"name": "Ohio State Buckeyes", "price": 1.92, "point": -4.5},
+                {"name": "Penn State Nittany Lions", "price": 1.96, "point": 4.5}]}
+            ]
+          },
+          {
+            "key": "williamhill_us", "title": "Caesars", "last_update": "2026-10-27T17:56:00Z",
+            "markets": [
+              {"key": "h2h", "last_update": "2026-10-27T17:56:00Z", "outcomes": [
+                {"name": "Ohio State Buckeyes", "price": 1.40},
+                {"name": "Penn State Nittany Lions", "price": 3.00}]}
+            ]
+          },
+          {
+            "key": "espnbet", "title": "ESPN BET", "last_update": "2026-10-27T17:56:00Z",
+            "markets": [
+              {"key": "spreads", "last_update": "2026-10-27T17:56:00Z", "outcomes": [
+                {"name": "Ohio State Buckeyes", "price": 1.83, "point": -4.5},
+                {"name": "Penn State Nittany Lions", "price": 2.02, "point": 4.5}]}
+            ]
+          }
+        ]
+      }
+    ],
+    "basketball_nba": [
+      {
+        "id": "demo-nba-1",
+        "sport_key": "basketball_nba",
+        "commence_time": "2026-10-27T23:30:00Z",
+        "home_team": "Boston Celtics",
+        "away_team": "New York Knicks",
+        "bookmakers": [
+          {
+            "key": "pinnacle", "title": "Pinnacle", "last_update": "2026-10-27T17:57:00Z",
+            "markets": [
+              {"key": "h2h", "last_update": "2026-10-27T17:57:00Z", "outcomes": [
+                {"name": "Boston Celtics", "price": 1.65},
+                {"name": "New York Knicks", "price": 2.35}]},
+              {"key": "totals", "last_update": "2026-10-27T17:57:00Z", "outcomes": [
+                {"name": "Over", "price": 1.91, "point": 221.5},
+                {"name": "Under", "price": 1.91, "point": 221.5}]}
+            ]
+          },
+          {
+            "key": "fanatics", "title": "Fanatics", "last_update": "2026-10-27T17:58:00Z",
+            "markets": [
+              {"key": "h2h", "last_update": "2026-10-27T17:58:00Z", "outcomes": [
+                {"name": "Boston Celtics", "price": 1.55},
+                {"name": "New York Knicks", "price": 2.50}]}
+            ]
+          },
+          {
+            "key": "betrivers", "title": "BetRivers", "last_update": "2026-10-27T17:58:00Z",
+            "markets": [
+              {"key": "totals", "last_update": "2026-10-27T17:58:00Z", "outcomes": [
+                {"name": "Over", "price": 2.02, "point": 221.5},
+                {"name": "Under", "price": 1.80, "point": 221.5}]}
+            ]
+          }
+        ]
+      }
+    ],
+    "tennis_atp_swiss_indoors": [
+      {
+        "id": "demo-tennis-1",
+        "sport_key": "tennis_atp_swiss_indoors",
+        "commence_time": "2026-10-28T12:00:00Z",
+        "home_team": "Alex Carter",
+        "away_team": "Mateo Ruiz",
+        "bookmakers": [
+          {
+            "key": "pinnacle", "title": "Pinnacle", "last_update": "2026-10-27T17:56:00Z",
+            "markets": [
+              {"key": "h2h", "last_update": "2026-10-27T17:56:00Z", "outcomes": [
+                {"name": "Alex Carter", "price": 1.62},
+                {"name": "Mateo Ruiz", "price": 2.40}]}
+            ]
+          },
+          {
+            "key": "hardrockbet_oh", "title": "Hard Rock Bet (OH)", "last_update": "2026-10-27T17:57:00Z",
+            "markets": [
+              {"key": "h2h", "last_update": "2026-10-27T17:57:00Z", "outcomes": [
+                {"name": "Alex Carter", "price": 1.50},
+                {"name": "Mateo Ruiz", "price": 2.60}]}
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "prop_odds": {
+    "demo-nfl-1": {
+      "id": "demo-nfl-1",
+      "sport_key": "americanfootball_nfl",
+      "commence_time": "2026-10-30T00:15:00Z",
+      "home_team": "Kansas City Chiefs",
+      "away_team": "Buffalo Bills",
+      "bookmakers": [
+        {
+          "key": "pinnacle", "title": "Pinnacle", "last_update": "2026-10-27T17:50:00Z",
+          "markets": [
+            {"key": "player_pass_yds", "last_update": "2026-10-27T17:50:00Z", "outcomes": [
+              {"name": "Over", "description": "Patrick Mahomes", "price": 1.87, "point": 262.5},
+              {"name": "Under", "description": "Patrick Mahomes", "price": 1.95, "point": 262.5}]},
+            {"key": "player_receptions", "last_update": "2026-10-27T17:50:00Z", "outcomes": [
+              {"name": "Over", "description": "Travis Kelce", "price": 1.80, "point": 5.5},
+              {"name": "Under", "description": "Travis Kelce", "price": 2.04, "point": 5.5}]}
+          ]
+        },
+        {
+          "key": "draftkings", "title": "DraftKings", "last_update": "2026-10-27T17:52:00Z",
+          "markets": [
+            {"key": "player_pass_yds", "last_update": "2026-10-27T17:52:00Z", "outcomes": [
+              {"name": "Over", "description": "Patrick Mahomes", "price": 2.00, "point": 262.5},
+              {"name": "Under", "description": "Patrick Mahomes", "price": 1.80, "point": 262.5}]}
+          ]
+        },
+        {
+          "key": "betmgm", "title": "BetMGM", "last_update": "2026-10-27T17:52:00Z",
+          "markets": [
+            {"key": "player_receptions", "last_update": "2026-10-27T17:52:00Z", "outcomes": [
+              {"name": "Over", "description": "Travis Kelce", "price": 1.67, "point": 5.5},
+              {"name": "Under", "description": "Travis Kelce", "price": 2.20, "point": 5.5}]}
+          ]
+        }
+      ]
+    },
+    "demo-nba-1": {
+      "id": "demo-nba-1",
+      "sport_key": "basketball_nba",
+      "commence_time": "2026-10-27T23:30:00Z",
+      "home_team": "Boston Celtics",
+      "away_team": "New York Knicks",
+      "bookmakers": [
+        {
+          "key": "pinnacle", "title": "Pinnacle", "last_update": "2026-10-27T17:57:00Z",
+          "markets": [
+            {"key": "player_points", "last_update": "2026-10-27T17:57:00Z", "outcomes": [
+              {"name": "Over", "description": "Jayson Tatum", "price": 1.95, "point": 27.5},
+              {"name": "Under", "description": "Jayson Tatum", "price": 1.87, "point": 27.5}]}
+          ]
+        },
+        {
+          "key": "espnbet", "title": "ESPN BET", "last_update": "2026-10-27T17:58:00Z",
+          "markets": [
+            {"key": "player_points", "last_update": "2026-10-27T17:58:00Z", "outcomes": [
+              {"name": "Over", "description": "Jayson Tatum", "price": 2.10, "point": 28.5},
+              {"name": "Under", "description": "Jayson Tatum", "price": 1.72, "point": 28.5}]}
+          ]
+        },
+        {
+          "key": "fanduel", "title": "FanDuel", "last_update": "2026-10-27T17:58:00Z",
+          "markets": [
+            {"key": "player_points", "last_update": "2026-10-27T17:58:00Z", "outcomes": [
+              {"name": "Over", "description": "Jayson Tatum", "price": 1.76, "point": 27.5},
+              {"name": "Under", "description": "Jayson Tatum", "price": 2.08, "point": 27.5}]}
+          ]
+        }
+      ]
+    }
+  }
+}

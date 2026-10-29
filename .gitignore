@@ -1,0 +1,24 @@
+# Private notes for Claude Code (personal, stays on this computer)
+CLAUDE.local.md
+
+# Secrets
+.env
+*.env
+
+# Real betting data and generated output (GitHub Actions keeps these on the "data" branch)
+paper_bets.csv
+edges_*.csv
+latest_scan.json
+dashboard.html
+site/
+data-branch/
+
+# Machine-specific setup and logs
+*.plist
+*.log
+
+# Python and macOS clutter
+__pycache__/
+*.pyc
+.DS_Store
+.vscode/

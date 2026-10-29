@@ -1,0 +1,119 @@
+# Runs the scanner on GitHub's computers.
+#
+#   - Scan:   by hand, from the Actions tab (works from the GitHub phone app).
+#   - Close:  every 10 minutes, records Pinnacle's closing price for paper bets
+#             about to start (no credits unless a bet's game starts soon).
+#   - Settle: once a day, grades finished paper bets.
+#
+# The paper log and latest scan are saved on the "data" branch, and the
+# dashboard is published to GitHub Pages. The API key comes from the
+# ODDS_API_KEY repository secret.
+
+name: Scanner
+
+on:
+  workflow_dispatch:
+    inputs:
+      task:
+        description: What to run
+        type: choice
+        options: [scan, settle, close, report]
+        default: scan
+      sports:
+        description: "Sports to scan (any of nfl,cfb,nba,tennis)"
+        default: nba,tennis
+      min_ev:
+        description: Minimum EV in percent
+        default: "2"
+  schedule:
+    - cron: "*/10 * * * *"   # close check (times are UTC)
+    - cron: "0 13 * * *"     # settle: 9 AM Eastern in summer, 8 AM in winter
+
+run-name: >-
+  ${{ inputs.task || (github.event.schedule == '0 13 * * *' && 'settle' || 'close check') }}
+
+# Only one run at a time, so two runs never save the paper log over each other.
+concurrency:
+  group: scanner-data
+  cancel-in-progress: false
+
+permissions:
+  contents: write    # save the paper log to the data branch
+  pages: write       # publish the dashboard
+  id-token: write
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    outputs:
+      changed: ${{ steps.save.outputs.changed }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Load saved data from the data branch
+        run: |
+          if git fetch --depth=1 origin data; then
+            git worktree add data-branch FETCH_HEAD
+            cp data-branch/paper_bets.csv data-branch/latest_scan.json . 2>/dev/null || true
+          else
+            echo "No data branch yet: starting a fresh paper log."
+          fi
+
+      - name: Run the scanner
+        env:
+          ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
+          TASK: ${{ inputs.task || (github.event.schedule == '0 13 * * *' && 'settle' || 'close') }}
+          SPORTS: ${{ inputs.sports || 'nba,tennis' }}
+          MIN_EV: ${{ inputs.min_ev || '2' }}
+        run: |
+          case "$TASK" in
+            scan)   python sharp_line_scanner.py --no-open --sports "$SPORTS" --min-ev "$MIN_EV" ;;
+            settle) python sharp_line_scanner.py --settle ;;
+            close)  python sharp_line_scanner.py --close ;;
+            report) python -c "import sharp_line_scanner as s; s.paper_report()" ;;
+          esac
+
+      - name: Save data and dashboard
+        id: save
+        run: |
+          [ -f dashboard.html ] || { echo "changed=false" >> "$GITHUB_OUTPUT"; exit 0; }
+          [ -d data-branch ] || git worktree add --orphan -b data data-branch
+          mkdir -p data-branch/scans site
+          cp paper_bets.csv latest_scan.json dashboard.html data-branch/ 2>/dev/null || true
+          cp edges_*.csv data-branch/scans/ 2>/dev/null || true
+          cp dashboard.html site/index.html
+          cd data-branch
+          git add -A
+          if git diff --cached --quiet; then
+            echo "Nothing new to save."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          git -c user.name="github-actions[bot]" \
+              -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+              commit -m "Update paper log ($TASK)"
+          git push origin HEAD:data
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+        env:
+          TASK: ${{ inputs.task || 'scheduled' }}
+
+      - name: Prepare the dashboard for GitHub Pages
+        if: steps.save.outputs.changed == 'true'
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: site
+
+  publish:
+    needs: run
+    if: needs.run.outputs.changed == 'true'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@v4
