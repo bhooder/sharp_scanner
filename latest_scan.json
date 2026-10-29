@@ -1,6 +1,23 @@
 {
- "scanned_at": "2026-10-29T04:07:01.844337+00:00",
+ "scanned_at": "2026-10-29T18:10:46.173247+00:00",
  "demo": false,
  "min_ev": 2.0,
- "edges": []
+ "edges": [
+  {
+   "bet_id": "7e16ce6f4bf3a1b6f3ecf28768bb8653|h2h|Adrian Mannarino||",
+   "ev_pct": 2.147900408769998,
+   "stake_pct": 0.09943983373935177,
+   "sport": "TENNIS",
+   "game": "Daniil Medvedev @ Adrian Mannarino",
+   "market": "Moneyline",
+   "bet": "Adrian Mannarino to win",
+   "book": "FanDuel",
+   "odds": 540,
+   "fair_odds": 527,
+   "pinnacle_odds": 475,
+   "decimal_odds": 6.4,
+   "fair_prob": 0.15960609438870313,
+   "starts": "2026-10-30T12:30:00+00:00"
+  }
+ ]
 }
